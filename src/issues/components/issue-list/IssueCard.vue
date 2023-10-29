@@ -1,35 +1,51 @@
 <script setup lang="ts">
+import { toRef } from 'vue';
+import useIssue from 'src/issues/composables/useIssue';
+import { Issue, State } from 'src/issues/interfaces/issue';
+import { timeSince } from 'src/shared/helpers/time-since';
+import VueMarkDown from 'vue-markdown-render'
+
+const props = defineProps<{ issue: Issue }>();
+const issueNumber = toRef(props, 'issue')
+
+const { prefetchIssue, setIssueCacheData } = useIssue(issueNumber.value.number, { autoload: false });
+
+// const mauseEnter = () => {
+//   // console.log('aaaaaaaaaaaaaaaa');
+// }
 
 
 </script>
 
 
 <template>
-  <q-card class="text-black col-12 q-mb-md" flat bordered>
+  <!-- <q-card @mouseenter="prefetchIssue(issue.number)" class="text-black col-12 q-mb-md" flat bordered > -->
+  <q-card @mouseenter="setIssueCacheData(issue)" class="text-black col-12 q-mb-md" flat bordered >
+      
     <q-item>
       <q-item-section avatar>
         <q-avatar>
-          <img src="https://cdn.quasar.dev/img/parallax2.jpg">
+          <img :src="issue.user.avatar_url" alt="Issue ">
         </q-avatar>
       </q-item-section>
 
       <q-item-section>
         <q-item-label>
-          <router-link :to="`/issue/${1}`">Algún título</router-link>
+          <router-link :to="`/issue/${issue.number}`">{{ issue.title }}</router-link>
         </q-item-label>
         <q-item-label caption>
-          2 days ago
+          {{ timeSince(issue.created_at) }} - 2 days ago
         </q-item-label>
       </q-item-section>
 
       <q-item-section>
         <q-item-label class="row items-center justify-end">
-          <q-item-label class="q-mr-md">
-            <q-icon name="question_answer" />
-            32
+          <q-item-label  class="q-mr-md">
+            <q-icon name="question_answer"/>
+            {{ issue.comments }}
           </q-item-label>
-          <q-chip color="positive" text-color="white" icon="check"> Closed </q-chip>
-          <q-chip color="negative" text-color="white" icon="bug_report"> Open </q-chip>
+          <q-chip v-if="issue.state == State.Closed" color="positive" text-color="white" icon="check"> Closed </q-chip>
+          <q-chip v-else color="negative" text-color="white" icon="bug_report"> Open </q-chip>
         </q-item-label>
 
       </q-item-section>
@@ -37,16 +53,17 @@
 
     <q-separator />
 
-    <q-item-section class="q-pa-md">
-      Algún código de Markdown
+    <q-item-section class="q-pa-md markdown-css" >
+      <vue-mark-down :source="issue.body || ''"/>
     </q-item-section>
 
     <q-separator />
 
     <q-item-section class="q-pa-xs q-gutter-xs">
       <div>
-        <q-chip outline clickable color="primary">
-          Click
+        <q-chip v-for="(label) in issue.labels" :key="label.id" :style="{ color: `#${label.color}` }" class="glossy"
+          outline>
+          {{ label.name }}
         </q-chip>
       </div>
     </q-item-section>
@@ -55,4 +72,10 @@
 </template>
 
 
-<style scoped></style>
+<style>
+
+.markdown-css img{
+  width: 250px;
+}
+
+</style>
